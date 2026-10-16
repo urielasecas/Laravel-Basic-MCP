@@ -1,0 +1,16 @@
+# Dependencias instaladas por Composer
+/vendor/
+php/src/vendor/
+
+# Entorno local
+.env
+php/src/.env
+
+# Dependencias y compilados de frontend
+node_modules/
+php/src/node_modules/
+php/src/public/build/
+
+# Archivos generados por Docker y Laravel
+php/src/storage/logs/
+php/src/storage/framework/

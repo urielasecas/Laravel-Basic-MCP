@@ -1,0 +1,5 @@
+{
+    "require": {
+        "laravel/mcp": "^1.0"
+    }
+}
