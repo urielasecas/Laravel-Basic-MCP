@@ -121,7 +121,7 @@ Modifiquémoslo con nuestra tool nueva
 En OTRA TERMINAL lanza MFC inspecto, que es como un Postman para MCP
 ```bash
 npx @modelcontextprotocol/inspector
-```
+```xmlx
 
 Debe terminar con un mensaje de que está corriendo en un puerto:
 ```bash
@@ -135,3 +135,125 @@ Abre la URL y colca tres datos en el panel de la izquierda:
 - URL: http://localhost:8000/mcp/task
 - Expandir configuración y en "Proxy session token" pegar el que te haya generado
 
+En la barra de arriba, da click en tools y luego "List Tools". Debería aparecer la herramienta de listar tareas
+```
+list-tasks-tool
+Returns a list of tasks with their completion status.
+```
+
+![list tools](image.png)
+
+7. Vamos a empezar con el proceso de que las Tasks salgan de la BD. Para ello comenzaremos creando un modelo:
+
+```bash
+docker compose exec php-apache-environment php artisan make:model Task -m
+```
+
+Eso creará el modelo y la migración:
+```bash
+
+   INFO  Model [app/Models/Task.php] created successfully.  
+
+   INFO  Migration [database/migrations/2026_10_19_211556_create_tasks_table.php] created successfully. 
+```
+
+8. Modificamos la migración recientemente creada para soportar los datos necesarios
+
+```php
+public function up(): void
+{
+    Schema::create('tasks', function (Blueprint $table) {
+        $table->id();
+        $table->string('title');
+        $table->text('description')->nullable();
+        $table->boolean('completed')->default(false);
+        $table->timestamps();
+    });
+}
+```
+
+Luego migramos
+```bash
+docker compose exec php-apache-environment php artisan migrate
+```
+
+Debemos obtener algo como esto:
+```bash
+   INFO  Running migrations.  
+
+  2026_10_19_211556_create_tasks_table ............................................................................................... 195.92ms DONE
+```
+
+9. Modificar el modelo Task para describir correctamente los campos de la tabla que creamos
+
+```php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Task extends Model
+{
+    protected $fillable = [
+        'title',
+        'description',
+        'completed',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'completed' => 'boolean',
+        ];
+    }
+}
+```
+
+10. Insertar datos de prueba desde Thinker
+
+Ejecutar Thinker
+```bash
+docker compose exec php-apache-environment php artisan tinker
+```
+
+Deberá mostrar algo como esto:
+```bash
+Psy Shell v0.12.24 (PHP 8.4.26 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.4). Update with `doc --update-manual`
+> 
+```
+
+Ejecuta código para insertar una task (en PHP):
+```php
+$task = App\Models\Task::create([
+    'title' => 'Learn Laravel MCP',
+    'description' => 'Build an MCP server with Laravel and MySQL',
+    'completed' => false,
+]);
+```
+
+La respuesta será la instancia creada con ID:
+```bash
+
+= App\Models\Task {#8002
+    title: "Learn Laravel MCP",
+    description: "Build an MCP server with Laravel and MySQL",
+    completed: false,
+    updated_at: "2026-10-19 21:32:48",
+    created_at: "2026-10-19 21:32:48",
+    id: 1,
+  }
+```
+
+11. FInalmwente, modificamos ListTasksTool para que el contenido provenga de BD
+
+```php
+public function handle(Request $request): Response
+{
+    $tasks = Task::all();
+
+    return Response::text(
+        $tasks->toJson(JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)
+    );
+}
+```

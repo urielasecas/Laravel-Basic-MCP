@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Models\Task;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
@@ -17,21 +18,10 @@ class ListTasksTool extends Tool
      */
     public function handle(Request $request): Response
     {
-        $tasks = [
-            [
-                'id' => 1,
-                'title' => 'Learn Laravel MCP',
-                'completed' => false,
-            ],
-            [
-                'id' => 2,
-                'title' => 'Prepare for technical interview',
-                'completed' => false,
-            ],
-        ];
+        $tasks = Task::all();
 
         return Response::text(
-            json_encode($tasks, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)
+            $tasks->toJson(JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)
         );
     }
 
